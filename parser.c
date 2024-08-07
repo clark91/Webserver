@@ -6,8 +6,6 @@
 struct request parseReq(char* reqObj){
   struct request parsed;
 
-  //parsed.address = malloc(40);
-
   int p = 0, type = 0;
   for(int i = 0; i < strlen(reqObj); i++){
     if(reqObj[i] == ' ' || reqObj[i] == '\n'){
