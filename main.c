@@ -68,9 +68,9 @@ void mngSocket(SOCKET ListenSocket){
            
     do
     {
-        printf("Waiting for MSG\n");
+        //printf("Waiting for MSG\n");
         iResult = recv(ClientSocket, recvbuf, recvbuflen, 0);
-        printf("Message Received\n");
+        //printf("Message Received\n");
         if(iResult > 0){
 
             struct request content = parseReq(recvbuf);
@@ -89,7 +89,7 @@ void mngSocket(SOCKET ListenSocket){
             printf("Closing Connection...\n");
         }
         else{
-            printf("recv failed: %d\n", WSAGetLastError());
+            //printf("recv failed: %d\n", WSAGetLastError());
             closesocket(ClientSocket);
             break;
         }
