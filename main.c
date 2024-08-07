@@ -114,14 +114,23 @@ int main(int argc, char const *argv[])
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_protocol = IPPROTO_TCP;
+    hints.ai_addr = INADDR_ANY;
+    
+    char hostname[1024];
+    hostname[1023] = '\0';
+    int iResult = gethostname(hostname, 1023); 
+    if (iResult != 0){
+        printf("Failed to resolve hostname\n");
+        WSACleanup();
+        return 1;
+    } //Resolves hostname
 
-
-    int iResult = getaddrinfo(NULL, DEFAULT_PORT, &hints, &result);
+    iResult = getaddrinfo(hostname, DEFAULT_PORT, &hints, &result); //For Localhost replace hostname with NULL
     if (iResult != 0) {
         printf("getaddrinfo failed: %d\n", iResult);
         WSACleanup();
         return 1;
-    }
+    } // Gets addrinfo for the IP, port and protocols provided
 
     SOCKET ListenSocket = INVALID_SOCKET;
     
@@ -132,7 +141,7 @@ int main(int argc, char const *argv[])
         freeaddrinfo(result);
         WSACleanup();
         return 1;
-    }
+    } 
 
     DWORD timeout = 1000 * 0.2; 
     setsockopt(ListenSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout));
@@ -148,8 +157,7 @@ int main(int argc, char const *argv[])
     while (TRUE){
         if ( listen( ListenSocket, SOMAXCONN ) == SOCKET_ERROR ) {
             printf( "Listen failed with error: %ld\n", WSAGetLastError() );
-            closesocket(ListenSocket);
-            
+            closesocket(ListenSocket);   
         }
         else
         {
