@@ -12,10 +12,8 @@
 
 void sendFile(SOCKET socket, char* resource){
     resource++;
-    //printf("Resource requested: %s\n", resource);
     FILE *sendFile = fopen(resource, "rb");
     if(sendFile == NULL){
-        //printf("File not found: %s\n", resource);
         send(socket, "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n", 46, 0);
         fclose(sendFile); 
     }
@@ -50,8 +48,6 @@ void sendFile(SOCKET socket, char* resource){
             printf("send failed: %d\n", WSAGetLastError());
         }
 
-        //printf("%s", msgBuf);
-
         free(fileBuf);
         free(msgBuf);
     }
@@ -76,8 +72,6 @@ void mngSocket(SOCKET ListenSocket){
         iResult = recv(ClientSocket, recvbuf, recvbuflen, 0);
         printf("Message Received\n");
         if(iResult > 0){
-            //printf("Bytes received: %d\n\n", iResult);
-            //printf("%s\n\n\n", recvbuf);
 
             struct request content = parseReq(recvbuf);
             if(strcmp("/", content.resource) == 0){
@@ -140,7 +134,7 @@ int main(int argc, char const *argv[])
         return 1;
     }
 
-    DWORD timeout = 1000 * 0.2; //1000ms * num of seconds
+    DWORD timeout = 1000 * 0.2; 
     setsockopt(ListenSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout));
 
     iResult = bind(ListenSocket, result->ai_addr, (int)result->ai_addrlen);
