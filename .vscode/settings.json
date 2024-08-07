@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "ws2def.h": "c",
+        "stdio.h": "c",
+        "httpfuncs.h": "c",
+        "brokencode": "c"
+    }
+}

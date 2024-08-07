@@ -1,0 +1,63 @@
+void sendFile(SOCKET socket, char* resource){
+    resource++;
+    FILE *sendFile = fopen(resource, "r");
+    if(sendFile == NULL){
+        printf("File not found: %s\n", resource);
+        send(socket, "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n", 46, 0);
+        fclose(sendFile); 
+    }
+    else{
+        fseek(sendFile, 0, SEEK_END);
+        long size = ftell(sendFile);
+        fseek(sendFile, 0, SEEK_SET);
+
+        char sizeStr[20];
+
+        char *fileBuf = malloc(size+100);
+        fseek(sendFile, 0, SEEK_SET);
+        fread(fileBuf, 1, size, sendFile);
+        fclose(sendFile);
+        fileBuf[size] = '\0';
+
+        size = strlen(fileBuf);
+        sprintf(sizeStr, "%d", size);
+
+
+        char *fileType = findMsgType(resource);
+    
+        long msgBufSize = size + 48 + strlen(sizeStr) + strlen(fileType);
+        //printf("%d\n", msgBufSize);
+
+        char *msgBuf = malloc(msgBufSize);
+
+
+        snprintf(msgBuf, msgBufSize,
+        "HTTP/1.1 200 OK\r\n"
+        "Content-Length: %s\r\n"
+        "Content-Type: %s\r\n"
+        "\r\n"
+        "%s", sizeStr, fileType, fileBuf); 
+
+        printf("%s", msgBuf);
+
+        int sendRes = send(socket, msgBuf, strlen(msgBuf), 0);
+        
+
+        //printf("%s\n",msgBuf);
+        //printf("sent %d bytes\n", sendRes);
+
+        if (sendRes == SOCKET_ERROR) {
+            printf("send failed: %d\n", WSAGetLastError());
+        }
+
+       /*  if(strcmp("text/javascript", fileType) == 0){
+            printf("%s", msgBuf);
+        } */
+
+       printf("%d", strlen(msgBuf));
+
+        free(fileBuf);
+        free(msgBuf);
+
+    }
+}
