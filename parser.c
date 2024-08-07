@@ -70,6 +70,8 @@ char* findMsgType(char* resource){
     return "text/css";
   }else if(strcmp(ext, "js") == 0){
     return "text/javascript";
+  }else if(strcmp(ext, "ico") == 0){
+    return "image/vnd.microsoft.icon";
   }else{
     printf("Failed to identfiy file type\n");
   }
