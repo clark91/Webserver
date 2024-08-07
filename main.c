@@ -57,7 +57,54 @@ void sendFile(SOCKET socket, char* resource){
     }
 }
 
+void mngSocket(SOCKET ListenSocket){
+    SOCKET ClientSocket;
 
+    ClientSocket = accept(ListenSocket, NULL, NULL);
+    if (ClientSocket == INVALID_SOCKET) {
+        printf("accept failed: %d\n", WSAGetLastError());
+        closesocket(ListenSocket);
+    }
+
+    char recvbuf[DEFAULT_BUFLEN];
+    int iSendResult, iResult;
+    int recvbuflen = DEFAULT_BUFLEN;
+           
+    do
+    {
+        printf("Waiting for MSG\n");
+        iResult = recv(ClientSocket, recvbuf, recvbuflen, 0);
+        printf("Message Received\n");
+        if(iResult > 0){
+            //printf("Bytes received: %d\n\n", iResult);
+            //printf("%s\n\n\n", recvbuf);
+
+            struct request content = parseReq(recvbuf);
+            if(strcmp("/", content.resource) == 0){
+                free(content.resource);
+                content.resource = malloc(sizeof("/index.html"));
+                content.resource = "/index.html";
+            }
+
+            if (strcmp(content.type, "GET") == 0){
+                sendFile(ClientSocket, content.resource);
+            }
+
+            
+        } else if (iResult == 0){
+            printf("Closing Connection...\n");
+        }
+        else{
+            printf("recv failed: %d\n", WSAGetLastError());
+            closesocket(ClientSocket);
+            break;
+        }
+        
+
+    } while (iResult != 0);
+
+
+}
 
 int main(int argc, char const *argv[])
 {
@@ -93,7 +140,8 @@ int main(int argc, char const *argv[])
         return 1;
     }
 
-    //printf("Socket is: %s\n", ListenSocket);
+    DWORD timeout = 1000 * 0.2; //1000ms * num of seconds
+    setsockopt(ListenSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout));
 
     iResult = bind(ListenSocket, result->ai_addr, (int)result->ai_addrlen);
     if (iResult == SOCKET_ERROR){
@@ -103,67 +151,28 @@ int main(int argc, char const *argv[])
         WSACleanup();
         return 1;
     }
-
-    if ( listen( ListenSocket, SOMAXCONN ) == SOCKET_ERROR ) {
-    printf( "Listen failed with error: %ld\n", WSAGetLastError() );
-    closesocket(ListenSocket);
-    WSACleanup();
-    return 1;
-    }
-
-    SOCKET ClientSocket;
-
-    ClientSocket = accept(ListenSocket, NULL, NULL);
-    if (ClientSocket == INVALID_SOCKET) {
-        printf("accept failed: %d\n", WSAGetLastError());
-        closesocket(ListenSocket);
-        WSACleanup();
-        return 1;
-    }
-
-    char recvbuf[DEFAULT_BUFLEN];
-    int iSendResult;
-    int recvbuflen = DEFAULT_BUFLEN;
-           
-    do
-    {
-        //printf("Waiting for MSG\n");
-        iResult = recv(ClientSocket, recvbuf, recvbuflen, 0);
-        if(iResult > 0){
-            //printf("Bytes received: %d\n\n", iResult);
-            //printf("%s\n\n\n", recvbuf);
-
-            struct request content = parseReq(recvbuf);
-            if(strcmp("/", content.resource) == 0){
-                free(content.resource);
-                content.resource = malloc(sizeof("/index.html"));
-                content.resource = "/index.html";
-            }
-
-            if (strcmp(content.type, "GET") == 0){
-                sendFile(ClientSocket, content.resource);
-            }
-
+    while (TRUE){
+        if ( listen( ListenSocket, SOMAXCONN ) == SOCKET_ERROR ) {
+            printf( "Listen failed with error: %ld\n", WSAGetLastError() );
+            closesocket(ListenSocket);
             
-        } else if (iResult == 0){
-            printf("Closing Connection...\n");
         }
-        else{
-            printf("recv failed: %d\n", WSAGetLastError());
-            break;
+        else
+        {
+            mngSocket(ListenSocket);
         }
-        
+    }
+   
 
-    } while (iResult != 0);
-
-
+    
     printf("Closing program...\n");
     freeaddrinfo(result);
     closesocket(ListenSocket);
+
+
+
+
     WSACleanup();
-
-    
-
     return 0;
 }
 
