@@ -11,8 +11,10 @@
 
 void sendFile(SOCKET socket, char *resource)
 {
-    resource++;
-    FILE *sendFile = fopen(resource, "rb");
+    char correctedRes[2048] = "src";
+    strncat(correctedRes, resource, strlen(resource));
+
+    FILE *sendFile = fopen(correctedRes, "rb");
     if (sendFile == NULL)
     {
         send(socket, "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n", 46, 0);
@@ -46,7 +48,7 @@ void sendFile(SOCKET socket, char *resource)
         char sizeStr[20];
         snprintf(sizeStr, 20, "%d", size);
 
-        char *fileType = findMsgType(resource);
+        char *fileType = findMsgType(correctedRes);
 
         long msgBufSize = size + 54 + strlen(sizeStr) + strlen(fileType);
         char *msgBuf = malloc(msgBufSize);
