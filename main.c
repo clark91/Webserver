@@ -15,7 +15,6 @@ void sendFile(SOCKET socket, char* resource){
     FILE *sendFile = fopen(resource, "rb");
     if(sendFile == NULL){
         send(socket, "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n", 46, 0);
-        fclose(sendFile); 
     }
     else{
         fseek(sendFile, 0L, SEEK_END);
@@ -23,12 +22,26 @@ void sendFile(SOCKET socket, char* resource){
         rewind(sendFile);
 
         char *fileBuf = malloc(size+1);
+        if (fileBuf == NULL){
+            printf("Malloc failed\n");
+            fclose(sendFile);
+            return;
+        }
+
         size_t bytesRead = fread(fileBuf, 1, size, sendFile);
+        if (bytesRead != size){
+            printf("Incorrect number of Bytes read\n");
+            fclose(sendFile);
+            free(fileBuf);
+            return;
+        }
+
         fclose(sendFile);
         fileBuf[size] = '\0';
 
         char sizeStr[20];
-        sprintf(sizeStr,"%d", size);
+        //sprintf(sizeStr,"%d", size);
+        snprintf(sizeStr, 20, "%d", size);
 
         char *fileType = findMsgType(resource);
 
@@ -76,8 +89,7 @@ void mngSocket(SOCKET ListenSocket){
             struct request content = parseReq(recvbuf);
             if(strcmp("/", content.resource) == 0){
                 free(content.resource);
-                content.resource = malloc(sizeof("/index.html"));
-                content.resource = "/index.html";
+                content.resource = strdup("/index.html");
             }
 
             if (strcmp(content.type, "GET") == 0){
@@ -125,7 +137,7 @@ int main(int argc, char const *argv[])
         return 1;
     } //Resolves hostname
 
-    iResult = getaddrinfo(hostname, DEFAULT_PORT, &hints, &result); //For Localhost replace hostname with NULL
+    iResult = getaddrinfo(NULL, DEFAULT_PORT, &hints, &result); //For Localhost replace hostname with NULL and vice versa
     if (iResult != 0) {
         printf("getaddrinfo failed: %d\n", iResult);
         WSACleanup();
