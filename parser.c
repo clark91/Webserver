@@ -6,6 +6,7 @@
 struct request parseReq(char* reqObj){
   struct request parsed;
 
+  //parses an HTTP request
   int p = 0, type = 0;
   for(int i = 0; i < strlen(reqObj); i++){
     if(reqObj[i] == ' ' || reqObj[i] == '\n'){
@@ -18,7 +19,7 @@ struct request parseReq(char* reqObj){
       }
 
       else{
-
+        //Uses count of spaces to identify each header.
         switch (type)
         {
           case 1:
@@ -54,6 +55,8 @@ struct request parseReq(char* reqObj){
 }
 
 char* findMsgType(char* resource){
+
+  //Finds the file extention
   int i;
   for(i = 0; i < strnlen(resource,100); i++){
     if(resource[i] == '.'){
@@ -62,6 +65,7 @@ char* findMsgType(char* resource){
   }
   char* ext = resource + i + 1;
 
+  //Returns the corresponding Content-Type for the extension
   if(strcmp(ext, "html") == 0){
     return "text/html";
   }else if(strcmp(ext, "css") == 0){

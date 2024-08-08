@@ -11,6 +11,7 @@
 
 void sendFile(SOCKET socket, char *resource)
 {
+    //Direct requested resource to the src/ folder
     char correctedRes[2048] = "src";
     strncat(correctedRes, resource, strlen(resource));
 
@@ -21,10 +22,12 @@ void sendFile(SOCKET socket, char *resource)
     }
     else
     {
+        //Find the length of the file
         fseek(sendFile, 0L, SEEK_END);
         size_t size = ftell(sendFile);
         rewind(sendFile);
 
+        //Create a buffer to store the data in the file
         char *fileBuf = malloc(size + 1);
         if (fileBuf == NULL)
         {
@@ -43,16 +46,18 @@ void sendFile(SOCKET socket, char *resource)
         }
 
         fclose(sendFile);
-        fileBuf[size] = '\0';
+        fileBuf[size] = '\0'; 
 
+        //Convert the size of the file to a string for use in the HTTP response
         char sizeStr[20];
         snprintf(sizeStr, 20, "%d", size);
 
         char *fileType = findMsgType(correctedRes);
 
+        //Create a buffer for the full HTTP response
         long msgBufSize = size + 54 + strlen(sizeStr) + strlen(fileType);
         char *msgBuf = malloc(msgBufSize);
-
+        //HTTP headers
         snprintf(msgBuf, msgBufSize,
                  "HTTP/1.1 200 OK\r\n"
                  "Content-Length: %s\r\n"
@@ -60,10 +65,11 @@ void sendFile(SOCKET socket, char *resource)
                  "\r\n\0",
                  sizeStr, fileType);
 
+        //Append the HTTP body
         memcpy(&msgBuf[strlen(msgBuf)], fileBuf, size);
 
+        //Send the HTTP response
         int sendRes = send(socket, msgBuf, msgBufSize, 0);
-
         if (sendRes == SOCKET_ERROR)
         {
             printf("send failed: %d\n", WSAGetLastError());
@@ -94,14 +100,14 @@ void mngSocket(SOCKET ListenSocket)
         iResult = recv(ClientSocket, recvbuf, recvbuflen, 0);
         if (iResult > 0)
         {
-
+            //If requested resource is "/", direct to index.html
             struct request content = parseReq(recvbuf);
             if (strcmp("/", content.resource) == 0)
             {
                 free(content.resource);
                 content.resource = strdup("/index.html");
             }
-
+            //Handle all other requested resources
             if (strcmp(content.type, "GET") == 0)
             {
                 sendFile(ClientSocket, content.resource);
@@ -123,6 +129,7 @@ void mngSocket(SOCKET ListenSocket)
 
 int main(int argc, char const *argv[])
 {
+    //Initialise Winsock
     WSADATA wsaData;
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
     {
@@ -148,7 +155,7 @@ int main(int argc, char const *argv[])
         return 1;
     } // Resolves hostname
 
-    iResult = getaddrinfo(NULL, DEFAULT_PORT, &hints, &result); // For Localhost replace hostname with NULL and vice versa
+    iResult = getaddrinfo(hostname, DEFAULT_PORT, &hints, &result); // For Localhost replace hostname with NULL and vice versa
     if (iResult != 0)
     {
         printf("getaddrinfo failed: %d\n", iResult);
@@ -158,8 +165,8 @@ int main(int argc, char const *argv[])
 
     SOCKET ListenSocket = INVALID_SOCKET;
 
+    //Create an IPv4 TCP stream socket
     ListenSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-
     if (ListenSocket == INVALID_SOCKET)
     {
         printf("Error at socket():  %d\n", WSAGetLastError());
@@ -167,10 +174,12 @@ int main(int argc, char const *argv[])
         WSACleanup();
         return 1;
     }
-
+    
+    //Create timeout for recv function
     DWORD timeout = 1000 * 0.2;
     setsockopt(ListenSocket, SOL_SOCKET, SO_RCVTIMEO, (const char *)&timeout, sizeof(timeout));
 
+    //Binds local address to the socket
     iResult = bind(ListenSocket, result->ai_addr, (int)result->ai_addrlen);
     if (iResult == SOCKET_ERROR)
     {
@@ -180,6 +189,7 @@ int main(int argc, char const *argv[])
         WSACleanup();
         return 1;
     }
+
     while (TRUE)
     {
         if (listen(ListenSocket, SOMAXCONN) == SOCKET_ERROR)
