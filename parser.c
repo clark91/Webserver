@@ -55,7 +55,7 @@ struct request parseReq(char* reqObj){
 
 char* findMsgType(char* resource){
   int i;
-  for(i = 0; i < sizeof(resource); i++){
+  for(i = 0; i < strnlen(resource,100); i++){
     if(resource[i] == '.'){
       break;
     }
@@ -70,7 +70,11 @@ char* findMsgType(char* resource){
     return "text/javascript";
   }else if(strcmp(ext, "ico") == 0){
     return "image/vnd.microsoft.icon";
-  }else{
+  }else if(strcmp(ext, "png") == 0){
+    return "image/png";
+  }
+  else{
     printf("Failed to identfiy file type\n");
+    return("*/*");
   }
 }

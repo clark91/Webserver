@@ -40,7 +40,6 @@ void sendFile(SOCKET socket, char* resource){
         fileBuf[size] = '\0';
 
         char sizeStr[20];
-        //sprintf(sizeStr,"%d", size);
         snprintf(sizeStr, 20, "%d", size);
 
         char *fileType = findMsgType(resource);
@@ -52,10 +51,12 @@ void sendFile(SOCKET socket, char* resource){
         "HTTP/1.1 200 OK\r\n"
         "Content-Length: %s\r\n"
         "Content-Type: %s\r\n"
-        "\r\n"
-        "%s", sizeStr, fileType, fileBuf); 
+        "\r\n\0", sizeStr, fileType); 
 
-        int sendRes = send(socket, msgBuf, strlen(msgBuf), 0);
+        memcpy(&msgBuf[strlen(msgBuf)], fileBuf, size);
+        
+
+        int sendRes = send(socket, msgBuf, msgBufSize, 0);
 
         if (sendRes == SOCKET_ERROR) {
             printf("send failed: %d\n", WSAGetLastError());
@@ -81,9 +82,7 @@ void mngSocket(SOCKET ListenSocket){
            
     do
     {
-        //printf("Waiting for MSG\n");
         iResult = recv(ClientSocket, recvbuf, recvbuflen, 0);
-        //printf("Message Received\n");
         if(iResult > 0){
 
             struct request content = parseReq(recvbuf);
